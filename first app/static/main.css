@@ -1,0 +1,160 @@
+/* main .css */
+/* minimal clean styling */ 
+body {
+  font-family: 'Segoe UI', Tahoma, sans-serif;
+  margin: 0;
+  background: #f7f7f7;
+  color: #222;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+/* ===== Layout Wrapper ===== */
+.layout {
+  display: flex;
+  min-height: 100vh;
+}
+
+/* ===== Sidebar ===== */
+.sidebar {
+  width: 230px;
+  background-color: #0d0b66;
+  color: white;
+  display: flex;
+  flex-direction: column;
+  padding: 20px 0;
+  position: fixed;
+  height: 100%;
+  top: 0;
+  left: 0;
+}
+
+/* ===== Logo + Title Box ===== */
+.logo-title {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #152f57;
+  color: #fff;
+  padding: 12px;
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+  border-bottom: 2px solid #1a45b2;
+}
+
+.logo-title svg {
+  margin-right: 8px;
+}
+
+/* ===== Sidebar Navigation ===== */
+.sidebar nav {
+  display: flex;
+  flex-direction: column;
+  padding: 0 20px;
+}
+
+.sidebar nav a {
+  color: #fff;
+  text-decoration: none;
+  padding: 10px 12px;
+  border-radius: 6px;
+  margin-bottom: 8px;
+  font-size: 0.95rem;
+  transition: background 0.2s;
+}
+
+.sidebar nav a:hover {
+  background: #1d489e;
+}
+
+.logout-link {
+  margin-top: auto;
+  background: #b30b0b;
+  text-align: center;
+  padding: 10px;
+  border-radius: 6px;
+}
+
+.logout-link:hover {
+  background: #e00000;
+}
+
+/* ===== Main Content ===== */
+.main-content {
+  margin-left: 230px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  padding: 20px 40px;
+  box-sizing: border-box;
+}
+
+/* ===== Footer ===== */
+.footer {
+  background: #eee;
+  color: #555;
+  padding: 12px 0;
+  text-align: center;
+  border-top: 1px solid #ddd;
+  margin-top: auto;
+}
+
+/* ===== Cards & Forms ===== */
+.card {
+  background: white;
+  padding: 16px;
+  margin: 12px 0;
+  border-radius: 6px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="number"] {
+  width: 100%;
+  padding: 8px;
+  box-sizing: border-box;
+  margin-top: 4px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+button,
+.btn {
+  display: inline-block;
+  margin-top: 10px;
+  padding: 8px 12px;
+  background: #007bff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+button:hover,
+.btn:hover {
+  background: #0069d9;
+}
+
+/* ===== Tables ===== */
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+table thead th {
+  background: #eee;
+  padding: 8px;
+  text-align: left;
+}
+
+table td,
+table th {
+  padding: 8px;
+  border-bottom: 1px solid #ddd;
+}

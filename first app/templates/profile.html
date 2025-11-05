@@ -1,0 +1,171 @@
+{% extends "layout.html" %}
+
+{% block title %}Profile - ByteBank{% endblock %}
+
+{% block content %}
+<div class="container profile-container">
+  <h2>User Profile</h2>
+
+  {% if user %}
+    <!-- Profile Card -->
+    <div class="profile-card">
+      <h3>{{ user.name }}</h3>
+      <p><strong>Email:</strong> {{ user.email }}</p>
+      <p><strong>Daily Quota:</strong> {{ user.daily_quota_mb }} MB</p>
+      <p><strong>Used Today:</strong> {{ user.used_today_mb }} MB</p>
+      <p><strong>Wallet Balance:</strong> {{ user.wallet.balance_mb }} MB ({{ user.wallet.balance_mb|mb_to_gb }})</p>
+      <p><strong>Total Data Purchased:</strong> {{ user.wallet.total_purchased_mb if user.wallet.total_purchased_mb else 0 }} MB</p>
+      <p><strong>Last Login:</strong> {{ user.last_login.strftime('%Y-%m-%d %H:%M:%S') if user.last_login else 'Never logged in' }}</p>
+      <p><strong>Account Created:</strong> {{ user.created_at.strftime('%Y-%m-%d %H:%M:%S') if user.created_at else 'Unknown' }}</p>
+      <p><strong>Total All-Time Usage:</strong> {{ user.total_usage_mb }} MB</p>
+    </div>
+
+    <!-- Profile Actions -->
+    <div class="profile-actions">
+      <a href="{{ url_for('update_profile') }}" class="btn">Edit Profile</a>
+      <a href="{{ url_for('change_password') }}" class="btn btn-secondary">Change Password</a>
+      <a href="{{ url_for('transfer') }}" class="btn">Transfer Data</a>
+    </div>
+
+    <!-- Recent Transactions -->
+    <div class="profile-transactions">
+      <h3>Recent Transactions</h3>
+
+      {% if transactions %}
+        <table>
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Type</th>
+              <th>From</th>
+              <th>To</th>
+              <th>Amount (MB)</th>
+              <th>Note</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for t in transactions %}
+              <tr>
+                <td>{{ t.timestamp.strftime('%Y-%m-%d %H:%M') if t.timestamp else 'N/A' }}</td>
+                <td>
+                  {% if t.sender_id == user.id %}
+                    Sent
+                  {% elif t.receiver_id == user.id %}
+                    Received
+                  {% else %}
+                    Unknown
+                  {% endif %}
+                </td>
+                <td>
+                  {% if t.sender %}{{ t.sender.email }}{% else %}SYSTEM{% endif %}
+                </td>
+                <td>
+                  {% if t.receiver %}{{ t.receiver.email }}{% else %}SYSTEM{% endif %}
+                </td>
+                <td>{{ t.amount_mb }}</td>
+                <td>{{ t.note or '' }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <p>No recent transactions found.</p>
+      {% endif %}
+    </div>
+
+  {% else %}
+    <p>Please <a href="{{ url_for('login') }}">login</a> to view your profile.</p>
+  {% endif %}
+</div>
+
+<style>
+.profile-container {
+    max-width: 900px;
+    margin: 40px auto;
+    padding: 20px;
+    background-color: #f9f9f9;
+    border-radius: 10px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+}
+
+.profile-card {
+    background-color: #ffffff;
+    padding: 20px;
+    border-radius: 10px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+}
+
+.profile-card h3 {
+    margin-bottom: 10px;
+    color: #333;
+}
+
+.profile-card p {
+    margin: 6px 0;
+    color: #555;
+}
+
+.profile-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 30px;
+}
+
+.profile-actions .btn {
+    display: inline-block;
+    padding: 10px 20px;
+    border-radius: 6px;
+    background-color: #007bff;
+    color: #fff;
+    text-decoration: none;
+    transition: background-color 0.2s;
+}
+
+.profile-actions .btn:hover {
+    background-color: #0056b3;
+}
+
+.profile-actions .btn.btn-secondary {
+    background-color: #6c757d;
+}
+
+.profile-actions .btn.btn-secondary:hover {
+    background-color: #5a6268;
+}
+
+.profile-transactions table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+    background-color: #fff;
+    border-radius: 6px;
+    overflow: hidden;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+}
+
+.profile-transactions th,
+.profile-transactions td {
+    padding: 12px 15px;
+    text-align: left;
+    border-bottom: 1px solid #ddd;
+}
+
+.profile-transactions th {
+    background-color: #007bff;
+    color: #fff;
+}
+
+.profile-transactions tr:hover {
+    background-color: #f1f1f1;
+}
+
+.profile-transactions p {
+    margin-top: 10px;
+    color: #555;
+    font-style: italic;
+    text-align: center;
+}
+</style>
+{% endblock %}

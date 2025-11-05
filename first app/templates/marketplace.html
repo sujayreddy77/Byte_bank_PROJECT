@@ -1,0 +1,89 @@
+{% extends 'layout.html' %}
+{% block content %}
+<div class="marketplace-container">
+  <h2>Data Marketplace</h2>
+  <p>Welcome, <strong>{{ user.name }}</strong> | Balance: <strong>₹{{ user.balance }}</strong></p>
+  <a class="sell-link" href="{{ url_for('sell') }}">Sell Data</a>
+  <hr>
+
+  {% if items %}
+    <div class="items-grid">
+      {% for item in items %}
+        <div class="item-card">
+          <h3>{{ item.title }}</h3>
+          <p>{{ item.description }}</p>
+          <p><strong>Price:</strong> ₹{{ item.price }}</p>
+          <p><strong>Seller:</strong> {{ item.seller.name }}</p>
+          {% if item.seller.id != user.id %}
+            <a class="buy-btn" href="{{ url_for('buy', item_id=item.id) }}">Buy</a>
+          {% else %}
+            <span class="your-listing">Your Listing</span>
+          {% endif %}
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <p>No data items available yet.</p>
+  {% endif %}
+</div>
+
+<style>
+.marketplace-container {
+  max-width: 900px;
+  margin: 20px auto;
+  padding: 0 10px;
+}
+
+.sell-link {
+  display: inline-block;
+  margin-bottom: 10px;
+  padding: 8px 16px;
+  background-color: #28a745;
+  color: white;
+  text-decoration: none;
+  border-radius: 5px;
+}
+
+.sell-link:hover {
+  background-color: #218838;
+}
+
+.items-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 15px;
+}
+
+.item-card {
+  padding: 15px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background-color: #f9f9f9;
+}
+
+.item-card h3 {
+  margin-top: 0;
+}
+
+.buy-btn {
+  display: inline-block;
+  margin-top: 10px;
+  padding: 6px 12px;
+  background-color: #007bff;
+  color: white;
+  text-decoration: none;
+  border-radius: 4px;
+}
+
+.buy-btn:hover {
+  background-color: #0056b3;
+}
+
+.your-listing {
+  display: inline-block;
+  margin-top: 10px;
+  font-style: italic;
+  color: #555;
+}
+</style>
+{% endblock %}
