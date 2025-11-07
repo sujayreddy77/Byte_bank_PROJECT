@@ -2,6 +2,52 @@
 
 {% block title %}Login - ByteBank{% endblock %}
 
+{% block content %}
+<div class="login-container">
+  <div class="login-card">
+    <h2>Login to ByteBank</h2>
+
+    <form method="POST" action="{{ url_for('login') }}">
+      <label for="email">Email</label>
+      <input type="text" id="email" name="email" placeholder="Enter your email" required>
+
+      <label for="password">Password</label>
+      <div class="password-field">
+        <input type="password" id="password" name="password" placeholder="Enter your password" required>
+        <span class="toggle-password" onclick="togglePassword('password', this)">
+          <svg xmlns="http://www.w3.org/2000/svg" class="eye-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+          </svg>
+        </span>
+      </div>
+
+      <button type="submit" class="btn-login">Login</button>
+    </form>
+
+    <p class="signup-link">
+      Don’t have an account? <a href="{{ url_for('register') }}">Sign up</a>
+    </p>
+  </div>
+</div>
+
+<script>
+function togglePassword(id, el) {
+  const input = document.getElementById(id);
+  const svg = el.querySelector("svg");
+  if (input.type === "password") {
+    input.type = "text";
+    svg.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.477 0-8.268-2.943-9.542-7a10.045 10.045 0 012.19-3.478M9.88 9.88a3 3 0 104.24 4.24M6.1 6.1l11.8 11.8"/>';
+  } else {
+    input.type = "password";
+    svg.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>';
+  }
+}
+</script>
+{% endblock %}
+
 {% block css %}
 <style>
   body {
@@ -116,50 +162,4 @@
     text-decoration: underline;
   }
 </style>
-{% endblock %}
-
-{% block content %}
-<div class="login-container">
-  <div class="login-card">
-    <h2>Login to ByteBank</h2>
-
-    <form method="POST" action="{{ url_for('login') }}">
-      <label for="email">Email</label>
-      <input type="text" id="email" name="email" placeholder="Enter your email" required>
-
-      <label for="password">Password</label>
-      <div class="password-field">
-        <input type="password" id="password" name="password" placeholder="Enter your password" required>
-        <span class="toggle-password" onclick="togglePassword('password', this)">
-          <svg xmlns="http://www.w3.org/2000/svg" class="eye-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-              d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-              d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-          </svg>
-        </span>
-      </div>
-
-      <button type="submit" class="btn-login">Login</button>
-    </form>
-
-    <p class="signup-link">
-      Don’t have an account? <a href="{{ url_for('register') }}">Sign up</a>
-    </p>
-  </div>
-</div>
-
-<script>
-function togglePassword(id, el) {
-  const input = document.getElementById(id);
-  const svg = el.querySelector("svg");
-  if (input.type === "password") {
-    input.type = "text";
-    svg.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.477 0-8.268-2.943-9.542-7a10.045 10.045 0 012.19-3.478M9.88 9.88a3 3 0 104.24 4.24M6.1 6.1l11.8 11.8"/>';
-  } else {
-    input.type = "password";
-    svg.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>';
-  }
-}
-</script>
 {% endblock %}

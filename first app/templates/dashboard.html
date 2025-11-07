@@ -17,8 +17,14 @@
   .quick-actions a { margin-right: 0.5rem; }
   input[type="number"] { width: 100%; padding: 0.5rem; margin-top: 0.25rem; margin-bottom: 0.5rem; border-radius: 6px; border: 1px solid #ccc; }
   .alert { color: #a94442; background-color: #f2dede; padding: 0.75rem 1rem; border-radius: 6px; margin-top: 1rem; }
-  table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
-  th, td { text-align: left; padding: 0.5rem; border-bottom: 1px solid #ddd; }
+  table { width: 100%; border-collapse: collapse; margin-top: 1rem; background-color: #fff; border-radius: 10px; overflow: hidden; }
+  th, td { text-align: left; padding: 0.75rem; border-bottom: 1px solid #ddd; }
+  th { background-color: #007bff; color: #fff; }
+  .status-active { color: green; font-weight: 600; }
+  .status-expiring { color: orange; font-weight: 600; }
+  .status-expired { color: gray; font-weight: 600; }
+  .wallet-summary { background: #f8f9fa; border-radius: 10px; padding: 1rem; margin-top: 1rem; display: flex; justify-content: space-between; align-items: center; font-weight: 500; }
+  .wallet-summary span { color: #007bff; }
 </style>
 {% endblock %}
 
@@ -53,9 +59,10 @@
   <div class="card">
     <h3>Data Wallet</h3>
     {% if wallet %}
-      <p><strong>Wallet balance:</strong> {{ wallet.balance_mb }} MB ({{ wallet.balance_mb|mb_to_gb }})</p>
-      <p><strong>Total data purchased:</strong> {{ wallet.total_purchased_mb }} MB</p>
-      <p><strong>Total data used:</strong> {{ wallet.total_used_mb or 0 }} MB</p>
+      <p><strong>Wallet Balance:</strong> <span>{{ wallet.balance_mb }} MB</span> ({{ wallet.balance_mb|mb_to_gb }})</p>
+      <p><strong>Total Data Purchased:</strong> <span>{{ wallet.total_purchased_mb }} MB</span>({{wallet.total_purchased_mb|mb_to_gb }}) </p>
+      <p><strong>Total Data Used:</strong> {{ wallet.total_used_mb or 0 }} MB</p>
+      <a href="{{ url_for('buy_data') }}" class="btn">Add More Data</a>
     {% else %}
       <p>No wallet data available.</p>
     {% endif %}
@@ -63,18 +70,22 @@
 
   <!-- Consume Data Card -->
   <div class="card">
-    <h3>Consume Data</h3>
-    <form method="post" action="{{ url_for('use_data') }}">
-      <label for="amount_mb">Amount (MB)</label>
-      <input type="number" id="amount_mb" name="amount_mb"
-             min="1"
-             max="{{ remaining if remaining > 0 else 0 }}"
-             required>
-      <button type="submit" class="btn">Use Data</button>
-    </form>
-  </div>
+  <h3>Consume Data</h3>
+  <form method="post" action="{{ url_for('use_data') }}">
+    <label for="amount_mb">Amount (MB)</label>
+    <input type="number" id="amount_mb" name="amount_mb" min="1" required>
 
-  <!-- Quick Actions Card -->
+    <label for="source">Use from:</label>
+    <select id="source" name="source" required>
+      <option value="daily">Daily Quota</option>
+      <option value="wallet">Wallet Balance</option>
+    </select>
+
+    <button type="submit" class="btn">Use Data</button>
+  </form>
+</div>
+
+  <!-- Quick Actions -->
   <div class="card">
     <h3>Quick Actions</h3>
     <div class="quick-actions">
@@ -84,6 +95,52 @@
       <a class="btn" href="{{ url_for('profile') }}">View Profile</a>
     </div>
   </div>
+</div>
 
+<!-- Wallet Summary + Entries -->
+<div class="card" style="margin-top: 2rem;">
+  <h3>Your Data Wallet Entries</h3>
+
+  {% if wallet %}
+    <div class="wallet-summary">
+      <div>Total Balance: <span>{{ wallet.balance_mb }} MB</span></div>
+      <div>Total Purchased: <span>{{ wallet.total_purchased_mb }} MB</span></div>
+      <div>Total Used: <span>{{ wallet.total_used_mb or 0 }} MB</span></div>
+    </div>
+  {% endif %}
+
+  {% if expiring_soon %}
+    <div class="alert">⚠ Some of your data entries are expiring soon!</div>
+  {% endif %}
+
+  <table>
+    <tr>
+      <th>Amount (MB)</th>
+      <th>Source</th>
+      <th>Added On</th>
+      <th>Expires On</th>
+      <th>Status</th>
+    </tr>
+
+    {% for entry in active_entries %}
+    <tr>
+      <td>{{ entry.amount_mb }}</td>
+      <td>{{ entry.source }}</td>
+      <td>{{ entry.added_on.strftime('%Y-%m-%d') }}</td>
+      <td>{{ entry.expiry_date.strftime('%Y-%m-%d') }}</td>
+      <td>
+        {% if entry.expiry_date < datetime.utcnow() %}
+          <span class="status-expired">Expired</span>
+        {% elif (entry.expiry_date - datetime.utcnow()).days <= 3 %}
+          <span class="status-expiring">Expiring Soon</span>
+        {% else %}
+          <span class="status-active">Active</span>
+        {% endif %}
+      </td>
+    </tr>
+    {% else %}
+    <tr><td colspan="10" style="text-align:center;">No active data entries.</td></tr>
+    {% endfor %}
+  </table>
 </div>
 {% endblock %}

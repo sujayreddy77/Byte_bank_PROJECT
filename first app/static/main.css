@@ -158,3 +158,61 @@ table th {
   padding: 8px;
   border-bottom: 1px solid #ddd;
 }
+.message {
+    padding: 10px 15px;
+    border-radius: 8px;
+    margin: 10px 0;
+    font-weight: 500;
+  }
+
+  .msg.success {
+    background-color: #d4edda; /* light green */
+    color: #155724;
+    border: 1px solid #c3e6cb;
+  }
+
+  .msg.danger {
+    background-color: #f8d7da; /* light red */
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+  }
+
+  .msg.warning {
+    background-color: #fff3cd; /* light yellow */
+    color: #856404;
+    border: 1px solid #ffeeba;
+  }
+
+  .msg.info {
+    background-color: #d1ecf1; /* light blue */
+    color: #0c5460;
+    border: 1px solid #bee5eb;
+  }
+  select {
+    width: 100%;
+    padding: 0.5rem;
+    margin-top: 0.25rem;
+    margin-bottom: 0.5rem;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+    background-color: #fff;
+    font-size: 1rem;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+
+  select:focus {
+    outline: none;
+    border-color: #007bff;
+    box-shadow: 0 0 4px rgba(0, 123, 255, 0.4);
+  }
+
+  option {
+    padding: 0.5rem;
+  }
+
+  label {
+    font-weight: 600;
+    display: block;
+    margin-top: 0.5rem;
+    color: #333;
+  }

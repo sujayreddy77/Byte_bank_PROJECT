@@ -17,7 +17,7 @@
       <p><strong>Total Data Purchased:</strong> {{ user.wallet.total_purchased_mb if user.wallet.total_purchased_mb else 0 }} MB</p>
       <p><strong>Last Login:</strong> {{ user.last_login.strftime('%Y-%m-%d %H:%M:%S') if user.last_login else 'Never logged in' }}</p>
       <p><strong>Account Created:</strong> {{ user.created_at.strftime('%Y-%m-%d %H:%M:%S') if user.created_at else 'Unknown' }}</p>
-      <p><strong>Total All-Time Usage:</strong> {{ user.total_usage_mb }} MB</p>
+      <p><strong>Total All-Time Usage:</strong> {{ total_all_time }} MB</p>
     </div>
 
     <!-- Profile Actions -->

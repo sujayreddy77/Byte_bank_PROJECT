@@ -2,7 +2,7 @@ from flask import Flask, render_template, request, redirect, url_for, session, f
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from werkzeug.security import generate_password_hash, check_password_hash
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 from sqlalchemy.orm import joinedload
 
 app = Flask(__name__)
@@ -20,6 +20,7 @@ class User(db.Model):
     password_hash = db.Column(db.String(200), nullable=False)
     daily_quota_mb = db.Column(db.Integer, default=1024)  # default 1GB/day in MB
     used_today_mb = db.Column(db.Integer, default=0)
+    total_used_mb = db.Column(db.Integer, default=0) #cumulative all-time usage
     last_usage_date = db.Column(db.Date, nullable=True)
     is_admin = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
@@ -49,6 +50,7 @@ class DataWallet(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), unique=True, nullable=False)
     balance_mb = db.Column(db.Integer, default=0)  # stored in MB
     total_purchased_mb = db.Column(db.Integer,default=0)
+    total_used_mb = db.Column(db.Integer, default=0)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     user = db.relationship('User', back_populates='wallet')
@@ -63,6 +65,23 @@ class Transaction(db.Model):
 
     sender = db.relationship('User', back_populates='sent_transactions', foreign_keys=[sender_id])
     receiver = db.relationship('User', back_populates='received_transactions', foreign_keys=[receiver_id])
+
+class DataEntry(db.Model):
+    _tablename_ = 'data_entry'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    amount_mb = db.Column(db.Integer, nullable=False)
+    source = db.Column(db.String(20), nullable=False)  # 'earned' or 'purchased'
+    added_on = db.Column(db.DateTime, default=datetime.utcnow)
+    expiry_date = db.Column(db.DateTime, nullable=False)
+
+    user = db.relationship('User', backref='data_entries')
+
+    @property
+    def is_active(self):
+        """Check if entry is still valid."""
+        return self.expiry_date >= datetime.utcnow()
 
 # Helpers
 def current_user():
@@ -81,21 +100,19 @@ def ensure_wallet(user):
         return wallet
     return user.wallet
 
-
 def simulate_end_of_day_rollover(user):
-    """If the last_usage_date is not today, roll leftover quota into wallet."""
+    """If the last_usage_date is not today, roll leftover quota into wallet as 'earned' DataEntry (7d expiry)."""
     if not user:
         return
     today = date.today()
-    # If last_usage_date is None or not today, roll leftover
     if user.last_usage_date == today:
         return
     leftover = max(0, (user.daily_quota_mb or 0) - (user.used_today_mb or 0))
     if leftover > 0:
-        wallet = ensure_wallet(user)
-        wallet.balance_mb += leftover
-        # record rollover as a system -> user transaction (sender_id None)
-        txn = Transaction(sender_id=None, receiver_id=user.id, amount_mb=leftover, note='Rollover')
+        # Add as earned data entry (7-day expiry)
+        add_earned_data(user, leftover)
+        # record rollover as a Transaction for history
+        txn = Transaction(sender_id=None, receiver_id=user.id, amount_mb=leftover, note='Rollover (earned)')
         db.session.add(txn)
     user.used_today_mb = 0
     user.last_usage_date = today
@@ -113,6 +130,54 @@ def get_all_the_things():
         ]
     }
 
+def cleanup_expired_entries(user):
+    """Remove expired entries (optional) or just ignore them when calculating active balance.
+    We'll delete expired entries to keep DB small."""
+    now = datetime.utcnow()
+    expired = DataEntry.query.filter(DataEntry.user_id==user.id, DataEntry.expiry_date < now).all()
+    if expired:
+        for e in expired:
+            db.session.delete(e)
+        db.session.commit()
+
+def get_active_entries(user):
+    now = datetime.utcnow()
+    return DataEntry.query.filter(
+        DataEntry.user_id == user.id,
+        DataEntry.expiry_date > now
+    ).all()
+def total_active_mb(user):
+    entries = get_active_entries(user)
+    return sum(e.amount_mb for e in entries)
+
+def create_entry(user_id, amount_mb, source):
+    now = datetime.utcnow()
+    expiry = now + timedelta(days=7 if source == 'earned' else 30)
+    entry = DataEntry(
+        user_id=user_id,
+        amount_mb=amount_mb,
+        source=source,
+        added_on=now,
+        expiry_date=expiry
+    )
+    db.session.add(entry)
+    db.session.commit()
+    print(f"✅ Created data entry: {amount_mb}MB ({source}) for user {user_id}")
+    return entry
+def add_purchased_data(user, amount_mb):
+    """Add purchased data (30 days expiry) and update DataWallet summary."""
+    create_entry(user.id, amount_mb, 'purchased')
+    wallet = ensure_wallet(user)
+    wallet.total_purchased_mb = (wallet.total_purchased_mb or 0) + amount_mb
+    wallet.balance_mb = (wallet.balance_mb or 0) + amount_mb
+    db.session.commit()
+
+def add_earned_data(user, amount_mb):
+    """Add earned data (7 days expiry) — used for rollovers or rewards."""
+    create_entry(user.id, amount_mb, 'earned')
+    wallet = ensure_wallet(user)
+    wallet.balance_mb = (wallet.balance_mb or 0) + amount_mb
+    db.session.commit()
 # Routes
 @app.route('/')
 def index():
@@ -184,10 +249,46 @@ def dashboard():
     user = current_user()
     if not user:
         return redirect(url_for('login'))
-    simulate_end_of_day_rollover(user)
-    wallet = ensure_wallet(user)
-    return render_template('dashboard.html', user=user, wallet=wallet)
 
+    # Apply rollover if needed
+    simulate_end_of_day_rollover(user)
+
+    # Ensure the user has a wallet
+    wallet = ensure_wallet(user)
+
+    # Remove expired data entries
+    cleanup_expired_entries(user)
+
+    # Fetch all active data entries
+    active_entries = get_active_entries(user)
+    total_active_mb = sum(entry.amount_mb for entry in active_entries)
+
+    # Entries expiring in the next 3 days
+    expiring_soon = [
+        entry for entry in active_entries
+        if (entry.expiry_date - datetime.utcnow()).days <= 3
+    ]
+
+    # Calculate remaining daily quota
+    remaining_today = max(user.daily_quota_mb - user.used_today_mb, 0)
+
+    # Summary of total used data
+    total_used_mb = user.used_today_mb
+
+    total_all_time = (user.used_today_mb or 0) + (wallet.total_used_mb or 0)
+
+    return render_template(
+        'dashboard.html',
+        user=user,
+        wallet=wallet,
+        active_entries=active_entries,
+        total_active_mb=total_active_mb,
+        expiring_soon=expiring_soon,
+        remaining_today=remaining_today,
+        total_used_mb=total_used_mb,
+        total_all_time=total_all_time,
+        wallet_balance=wallet.balance_mb
+    )
 
 @app.route('/marketplace')
 def marketplace():
@@ -214,52 +315,21 @@ def marketplace():
     # 4. Render the marketplace template
     return render_template('marketplace.html', user=user, items=items)
 
-@app.route('/buy_data', methods=['GET', 'POST'])
-def buy_data():
-    user = current_user()
-    if not user:
-        return redirect(url_for('login'))
 
-    wallet = ensure_wallet(user)
-
-    if request.method == 'POST':
-        raw_amount = request.form.get('amount', '').strip()
-        if not raw_amount.isdigit():
-            flash("Invalid amount.", "danger")
-            return redirect(url_for('dashboard'))
-
-        amount = int(raw_amount)
-        if amount <= 0:
-            flash("Amount must be greater than 0.", "danger")
-            return redirect(url_for('dashboard'))
-
-        # Update wallet balance and total purchased
-        wallet.balance_mb += amount
-        wallet.total_purchased_mb += amount
-
-        # Add transaction record
-        txn = Transaction(
-            sender_id=None,
-            receiver_id=user.id,
-            amount_mb=amount,
-            note=f"Bought {amount} MB of data"
-        )
-        db.session.add(txn)
-        db.session.commit()
-
-        flash(f"Successfully bought {amount} MB of data!", "success")
-        return redirect(url_for('dashboard'))
-
-    return render_template('buy_data.html', user=user, wallet=wallet)
 @app.route('/profile')
 def profile():
     user = current_user()
-
     if not user:
         flash("Please login to view your profile.", "error")
         return redirect(url_for('login'))
 
-    # Get recent transactions with sender and receiver details loaded
+    # Ensure the user has a wallet
+    wallet = ensure_wallet(user)
+
+    # Calculate total all-time usage
+    total_all_time = user.total_used_mb or 0
+
+    # Get recent transactions involving the user (sender or receiver)
     transactions = (
         Transaction.query.options(
             joinedload(Transaction.sender),
@@ -271,8 +341,17 @@ def profile():
         .all()
     )
 
-    return render_template('profile.html', user=user, transactions=transactions)
+    # Debug prints (optional)
+    print(f"[DEBUG PROFILE] Wallet balance: {wallet.balance_mb}, Wallet used: {wallet.total_used_mb}")
+    print(f"[DEBUG PROFILE] Total All-Time Usage: {total_all_time}")
 
+    return render_template(
+        'profile.html',
+        user=user,
+        wallet=wallet,
+        total_all_time=total_all_time,
+        transactions=transactions
+    )
 @app.route('/update_profile', methods=['GET', 'POST'])
 def update_profile():
     user = current_user()
@@ -302,7 +381,7 @@ def change_password():
         new_pass = request.form.get('new_password')
         confirm_pass = request.form.get('confirm_password')
 
-        if not check_password_hash(user.password, current_pass):
+        if not check_password_hash(user.password_hash, current_pass):
             flash("Current password is incorrect.", "error")
         elif new_pass != confirm_pass:
             flash("New passwords do not match.", "error")
@@ -334,76 +413,169 @@ def sell():
 
     return render_template('sell.html', user=user)
 
-
-@app.route('/buy/<int:item_id>')
-def buy(item_id):
-    if 'user_id' not in session:
-        return redirect(url_for('login'))
-
-    buyer = User.query.get(session['user_id'])
-    item = DataItem.query.get_or_404(item_id)
-    seller = item.seller
-
-    if buyer.id == seller.id:
-        flash("You can't buy your own data item!", 'warning')
-        return redirect(url_for('marketplace'))
-
-    if buyer.balance < item.price:
-        flash('Insufficient balance to buy this item.', 'danger')
-        return redirect(url_for('marketplace'))
-
-    # Transfer money
-    buyer.balance -= item.price
-    seller.balance += item.price
-
-    # Record transaction (optional)
-    transaction = Transaction(
-        sender_id=buyer.id,
-        receiver_id=seller.id,
-        amount=item.price,
-        description=f'Purchased data: {item.title}'
-    )
-    db.session.add(transaction)
-
+@app.route('/admin/cleanup_expired')
+def admin_cleanup_expired():
+    user = current_user()
+    if not user or not user.is_admin:
+        return jsonify({'error':'admin required'}), 403
+    all_entries = DataEntry.query.filter(DataEntry.expiry_date < datetime.utcnow()).all()
+    count = len(all_entries)
+    for e in all_entries:
+        db.session.delete(e)
     db.session.commit()
-    flash(f'You bought "{item.title}" for ₹{item.price}!', 'success')
-    return redirect(url_for('marketplace'))
+    return jsonify({'cleaned': count})
 
-@app.route('/use_data', methods=['POST'])
-def use_data():
-    """Consume data: prefer daily quota then wallet if needed."""
+@app.route('/buy_data', methods=['GET', 'POST'])
+def buy_data():
     user = current_user()
     if not user:
         return redirect(url_for('login'))
-    simulate_end_of_day_rollover(user)
-    try:
-        amount_mb = int(request.form.get('amount_mb', 0))
-    except (TypeError, ValueError):
-        flash('Enter a valid amount', 'warning')
-        return redirect(url_for('dashboard'))
 
-    if amount_mb <= 0:
-        flash('Enter a valid amount', 'warning')
-        return redirect(url_for('dashboard'))
-
-    remaining_quota = max(0, (user.daily_quota_mb or 0) - (user.used_today_mb or 0))
     wallet = ensure_wallet(user)
 
-    used_from_quota = min(remaining_quota, amount_mb)
-    remainder = amount_mb - used_from_quota
+    if request.method == 'POST':
+        raw_amount = request.form.get('amount', '').strip()
+        if not raw_amount.isdigit():
+            flash("Invalid amount.", "danger")
+            return redirect(url_for('buy_data'))
 
-    if remainder > wallet.balance_mb:
-        flash('Insufficient total balance (quota + wallet)', 'danger')
+        amount = int(raw_amount)
+        if amount <= 0:
+            flash("Amount must be greater than 0.", "danger")
+            return redirect(url_for('buy_data'))
+
+        # Update wallet balance and total purchased
+        wallet.balance_mb += amount
+        wallet.total_purchased_mb += amount
+
+        # Create new DataEntry so it appears on dashboard
+        expiry_date = datetime.utcnow() + timedelta(days=30)  # purchased data valid for 30 days
+        new_entry = DataEntry(
+            user_id=user.id,
+            amount_mb=amount,
+            source='purchased',
+            added_on=datetime.utcnow(),
+            expiry_date=expiry_date
+        )
+        db.session.add(new_entry)
+
+        # Add transaction record
+        txn = Transaction(
+            sender_id=None,
+            receiver_id=user.id,
+            amount_mb=amount,
+            note=f"Bought {amount} MB of data"
+        )
+        db.session.add(txn)
+
+        db.session.commit()
+
+        flash(f"Successfully bought {amount} MB of data!", "success")
         return redirect(url_for('dashboard'))
 
-    user.used_today_mb = (user.used_today_mb or 0) + used_from_quota
-    if remainder > 0:
-        wallet.balance_mb -= remainder
-        txn = Transaction(sender_id=user.id, receiver_id=None, amount_mb=remainder, note='Wallet usage')
-        db.session.add(txn)
-    db.session.commit()
-    flash(f'Consumed {amount_mb} MB (quota: {used_from_quota} MB, wallet: {remainder} MB)', 'success')
-    return redirect(url_for('dashboard'))
+    return render_template('buy_data.html', user=user, wallet=wallet)
+
+@app.route('/use_data', methods=['POST'])
+def use_data():
+    user = current_user()
+    if not user:
+        return redirect(url_for('login'))
+
+    wallet = ensure_wallet(user)
+
+    try:
+        amount = int(request.form.get('amount_mb', 0))
+    except (TypeError, ValueError):
+        flash("Invalid amount entered.", "danger")
+        return redirect(url_for('dashboard'))
+
+    source = request.form.get('source')
+
+    if amount <= 0:
+        flash("Please enter a valid amount.", "danger")
+        return redirect(url_for('dashboard'))
+
+    try:
+        used_amount = 0  # Track actual amount used
+
+        if source == 'daily':
+            quota_left = (user.daily_quota_mb or 0) - (user.used_today_mb or 0)
+            if amount > quota_left:
+                flash("Not enough daily quota remaining.", "danger")
+                return redirect(url_for('dashboard'))
+
+            user.used_today_mb += amount
+            user.total_used_mb = (user.total_used_mb or 0) + amount
+            used_amount = amount
+            flash(f"Used {amount} MB from daily quota.", "success")
+
+        elif source == 'wallet':
+            if wallet.balance_mb < amount:
+                flash("Not enough balance in wallet.", "danger")
+                return redirect(url_for('dashboard'))
+
+            # Consume active DataEntry records safely
+            active_entries = get_active_entries(user) or []
+            remaining = amount
+
+            for entry in active_entries[:]:  # iterate over a copy to safely delete
+                if remaining <= 0:
+                    break
+                entry_amount = entry.amount_mb or 0
+                if entry_amount <= remaining:
+                    remaining -= entry_amount
+                    entry.amount_mb = 0
+                    db.session.delete(entry)  # remove fully consumed entry
+                else:
+                    entry.amount_mb -= remaining
+                    remaining = 0
+
+            # Update wallet and all-time usage
+            wallet.balance_mb -= amount
+            wallet.total_used_mb = (wallet.total_used_mb or 0) + amount
+            user.total_used_mb = (user.total_used_mb or 0) + amount
+            used_amount = amount
+            flash(f"Used {amount} MB from wallet balance.", "success")
+
+        else:
+            flash("Invalid data source selected.", "danger")
+            return redirect(url_for('dashboard'))
+
+        # Commit changes
+        db.session.commit()
+
+        # Refresh objects from DB
+        db.session.expire_all()
+        wallet = ensure_wallet(user)
+        active_entries = get_active_entries(user) or []
+
+        # Debug prints
+        print(f"[DEBUG] Wallet balance: {wallet.balance_mb}, Total used: {wallet.total_used_mb}")
+        print(f"[DEBUG] User daily used: {user.used_today_mb}")
+        print(f"[DEBUG] Active entries count: {len(active_entries)}")
+
+        # Calculate total all-time usage
+        total_all_time = user.total_used_mb or 0
+
+        return render_template(
+            'dashboard.html',
+            wallet=wallet,
+            user=user,
+            active_entries=active_entries,
+            total_active_mb=sum(e.amount_mb for e in active_entries),
+            expiring_soon=[e for e in active_entries if (e.expiry_date - datetime.utcnow()).days <= 3],
+            remaining_today=max((user.daily_quota_mb or 0) - (user.used_today_mb or 0), 0),
+            total_all_time=total_all_time,
+            wallet_balance=wallet.balance_mb,
+            total_used_today=user.used_today_mb
+        )
+
+    except Exception as e:
+        db.session.rollback()
+        import traceback
+        traceback.print_exc()  # prints full error stack trace
+        flash(f"An error occurred: {str(e)}", "danger")
+        return redirect(url_for('dashboard'))
 
 @app.route('/transfer', methods=['GET', 'POST'])
 def transfer():
