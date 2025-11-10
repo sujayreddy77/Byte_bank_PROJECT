@@ -1,0 +1,35 @@
+{% extends 'layout.html' %}
+{% block content %}
+  <h2>Admin Panel</h2>
+  <h3>Users</h3>
+  <table>
+    <thead><tr><th>ID</th><th>Name</th><th>Email</th><th>Wallet MB</th><th>Daily Quota</th></tr></thead>
+    <tbody>
+      {% for u in users %}
+        <tr>
+          <td>{{ u.id }}</td>
+          <td>{{ u.name }}</td>
+          <td>{{ u.email }}</td>
+          <td>{{ u.wallet.balance_mb if u.wallet else 0 }}</td>
+          <td>{{ u.daily_quota_mb }}</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <h3>Recent Transactions</h3>
+  <table>
+    <thead><tr><th>Time</th><th>From</th><th>To</th><th>MB</th><th>Note</th></tr></thead>
+    <tbody>
+      {% for t in txns %}
+        <tr>
+          <td>{{ t.timestamp.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+          <td>{% if t.sender %}{{ t.sender.email }}{% else %}SYSTEM{% endif %}</td>
+          <td>{% if t.receiver %}{{ t.receiver.email }}{% else %}SYSTEM{% endif %}</td>
+          <td>{{ t.amount_mb }}</td>
+          <td>{{ t.note }}</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% endblock %}

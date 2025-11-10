@@ -1,0 +1,110 @@
+{% extends 'layout.html' %}
+
+{% block content %}
+<section class="hero">
+  <div class="hero-content">
+    <h1>Welcome to ByteBank</h1>
+    <p>Your smart data wallet for daily data rollover and sharing.</p>
+
+    {% if user %}
+      <p class="hero-cta">
+        <a class="btn primary-btn" href="{{ url_for('dashboard') }}">Go to Dashboard</a>
+      </p>
+      <p class="hero-subtext">Logged in as <strong>{{ user.name }}</strong></p>
+    {% else %}
+      <p class="hero-cta">
+        <a class="btn primary-btn" href="{{ url_for('register') }}">Register</a>
+        <span class="separator">or</span>
+        <a class="btn secondary-btn" href="{{ url_for('login') }}">Login</a>
+      </p>
+      <p class="hero-subtext">Already have an account? Login to access your dashboard.</p>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}
+
+{% block styles %}
+<style>
+  .hero {
+    background: linear-gradient(135deg, #007bff, #00c6ff);
+    color: #fff;
+    padding: 5rem 2rem;
+    text-align: center;
+    border-radius: 12px;
+    margin: 2rem 0;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+  }
+
+  .hero h1 {
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+  }
+
+  .hero p {
+    font-size: 1.2rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .btn {
+    padding: 0.6rem 1.5rem;
+    border-radius: 6px;
+    text-decoration: none;
+    font-weight: 500;
+    transition: background-color 0.3s, transform 0.2s;
+  }
+
+  .btn:hover {
+    transform: translateY(-2px);
+  }
+
+  .primary-btn {
+    background-color: #fff;
+    color: #007bff;
+  }
+
+  .primary-btn:hover {
+    background-color: #e6e6e6;
+  }
+
+  .secondary-btn {
+    background-color: transparent;
+    color: #fff;
+    border: 2px solid #fff;
+  }
+
+  .secondary-btn:hover {
+    background-color: rgba(255,255,255,0.2);
+  }
+
+  .separator {
+    margin: 0 0.5rem;
+    font-weight: bold;
+  }
+
+  .hero-subtext {
+    font-size: 0.9rem;
+    margin-top: 1rem;
+    color: #f0f0f0;
+  }
+
+  @media (max-width: 600px) {
+    .hero h1 {
+      font-size: 2rem;
+    }
+
+    .hero p {
+      font-size: 1rem;
+    }
+
+    .btn {
+      display: block;
+      margin: 0.5rem auto;
+    }
+
+    .separator {
+      display: block;
+      margin: 0.5rem 0;
+    }
+  }
+</style>
+{% endblock %}
