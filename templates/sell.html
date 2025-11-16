@@ -1,8 +1,13 @@
-{% extends 'layout.html' %}
+{% extends "layout.html" %}
+{% block title %}Sell Data - ByteBank{% endblock %}
+
 {% block content %}
+
 <div class="sell-form-container">
   <h2>List a Data Item for Sale</h2>
+
   <form method="post" class="sell-form">
+
     <div class="form-group">
       <label for="title">Title</label>
       <input type="text" id="title" name="title" placeholder="Enter item title" required>
@@ -15,76 +20,70 @@
 
     <div class="form-group">
       <label for="price">Price (₹)</label>
-      <input type="number" id="price" name="price" placeholder="Enter price" step="0.01" min="0" required>
+      <input type="number" id="price" name="price" placeholder="Enter price" min="1" required>
     </div>
 
-    <button type="submit">List for Sale</button>
+    <button type="submit" class="btn">List for Sale</button>
+
   </form>
 </div>
 
 <style>
-/* ===== Sell Page Styles ===== */
 .sell-form-container {
   max-width: 900px;
-  width: 80%;
   margin: 40px auto;
   padding: 30px;
-  border: 1px solid #ddd;
-  border-radius: 10px;
+  border-radius: 12px;
   background-color: #fff;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
 }
 
 .sell-form-container h2 {
   text-align: center;
-  color: #222;
   margin-bottom: 20px;
-  font-size: 1.4rem;
+  font-size: 1.8rem;
+  color: #007bff;
 }
 
-.sell-form .form-group {
+.form-group {
   margin-bottom: 16px;
 }
 
-.sell-form label {
+.form-group label {
   font-weight: 600;
   display: block;
   margin-bottom: 6px;
-  color: #333;
 }
 
-.sell-form input[type="text"],
-.sell-form input[type="number"],
+.sell-form input,
 .sell-form textarea {
   width: 100%;
-  padding: 10px;
+  padding: 12px;
   border: 1px solid #ccc;
-  border-radius: 6px;
-  font-size: 14px;
-  box-sizing: border-box;
+  border-radius: 8px;
+  font-size: 15px;
   transition: border-color 0.2s;
 }
 
 .sell-form input:focus,
 .sell-form textarea:focus {
   border-color: #007bff;
-  outline: none;
 }
 
-.sell-form button {
+.btn {
   width: 100%;
-  padding: 10px;
-  border: none;
-  border-radius: 6px;
+  padding: 12px;
+  font-size: 1rem;
   background-color: #007bff;
-  color: white;
-  font-size: 15px;
+  color: #fff;
+  border-radius: 8px;
+  border: none;
   cursor: pointer;
-  transition: background 0.2s;
 }
 
-.sell-form button:hover {
+.btn:hover {
   background-color: #0056b3;
 }
 </style>
+
 {% endblock %}

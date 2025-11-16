@@ -1,148 +1,269 @@
-{% extends 'layout.html' %}
-
+{% extends "layout.html" %}
 {% block title %}Register - ByteBank{% endblock %}
 
 {% block content %}
-<div class="register-container">
-  <div class="register-card">
-    <h2>Create Account</h2>
+<h2 class="page-title">Create an Account</h2>
 
-    <!-- Flash messages -->
-    {% with messages = get_flashed_messages(with_categories=true) %}
-      {% if messages %}
-        <div class="messages">
-          {% for category, message in messages %}
-            <div class="msg {{ category }}">{{ message }}</div>
-          {% endfor %}
-        </div>
-      {% endif %}
-    {% endwith %}
+<div class="card auth-card">
 
-    <form method="post" action="{{ url_for('register') }}">
-      <label for="name">Full Name</label>
-      <input type="text" id="name" name="name" placeholder="Enter your name" required>
+  <!-- Flash Messages -->
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      {% for category, message in messages %}
+        <div class="flash {{ category }}">{{ message }}</div>
+      {% endfor %}
+    {% endif %}
+  {% endwith %}
 
-      <label for="email">Email</label>
-      <input type="email" id="email" name="email" placeholder="Enter your email" required>
-
-      <label for="password">Password</label>
-      <input type="password" id="password" name="password" placeholder="Create a password" required>
-
-      <button type="submit" class="btn-register">Register</button>
-    </form>
-
-    <p class="login-link">
-      Already have an account?
-      <a href="{{ url_for('login') }}">Login here</a>
-    </p>
+  <!-- Full Name -->
+  <div class="form-group">
+    <label>Full Name</label>
+    <input type="text" id="name" placeholder="Enter your full name" autocomplete="off">
   </div>
+
+  <!-- Identifier -->
+  <div class="form-group">
+    <label>Email or Mobile</label>
+    <input type="text" id="identifier" placeholder="Enter your email or mobile" autocomplete="off">
+  </div>
+
+  <!-- Password -->
+  <div class="form-group password-wrapper">
+    <label>Password</label>
+    <input type="password" id="password" placeholder="Create a password" autocomplete="new-password">
+    <span class="toggle-password" onclick="togglePassword('password', this)">👁</span>
+  </div>
+
+  <!-- OTP Field -->
+  <div class="form-group" id="otp-group" style="display:none;">
+    <label>OTP</label>
+    <input type="text" id="otp" placeholder="Enter OTP">
+  </div>
+
+  <!-- Buttons -->
+  <div class="controls">
+    <button id="send-otp-btn" class="btn btn-primary">Send OTP</button>
+    <button id="register-btn" class="btn btn-success" style="display:none;">Complete Registration</button>
+  </div>
+
+  <!-- Login Link -->
+  <div class="meta">
+    Already have an account?  
+    <a href="{{ url_for('login_page') }}">Login here</a>
+  </div>
+
+  <div id="msg" class="msg"></div>
+
 </div>
 {% endblock %}
 
 {% block css %}
 <style>
-.register-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 80vh;
-  background-color: #f7f7f7;
+.page-title {
+  text-align: center;
+  margin-bottom: 20px;
 }
 
-.register-card {
-  background: #fff;
-  padding: 30px 40px;
-  border-radius: 10px;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+/* Main card */
+.auth-card {
   width: 80%;
+  margin: auto;
+  padding: 25px;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.08);
 }
 
-.register-card h2 {
+/* Flash messages */
+.flash {
+  padding: 10px;
+  border-radius: 8px;
+  margin-bottom: 15px;
   text-align: center;
-  margin-bottom: 1.5rem;
-  color: #222;
 }
+.flash.success { background: #d4edda; color: #155724; }
+.flash.error { background: #f8d7da; color: #721c24; }
 
-label {
-  display: block;
+/* Form */
+.form-group {
+  margin-bottom: 15px;
+}
+.form-group label {
   font-weight: 600;
-  margin-top: 10px;
-  color: #333;
+  font-size: 0.95rem;
 }
-
-input[type="text"],
-input[type="email"],
-input[type="password"] {
+.form-group input {
   width: 100%;
-  padding: 10px;
-  margin-top: 6px;
+  padding: 12px;
+  border-radius: 8px;
   border: 1px solid #ccc;
-  border-radius: 6px;
-  font-size: 15px;
-  box-sizing: border-box;
+  margin-top: 6px;
 }
 
-input:focus {
-  border-color: #007bff;
-  outline: none;
-  box-shadow: 0 0 4px rgba(0, 123, 255, 0.3);
+/* Password toggle */
+.password-wrapper {
+  position: relative;
 }
-
-.btn-register {
-  display: block;
-  width: 100%;
-  padding: 10px;
-  background: #007bff;
-  color: #fff;
-  font-size: 16px;
-  border: none;
-  border-radius: 6px;
-  margin-top: 18px;
+.toggle-password {
+  position: absolute;
+  right: 12px;
+  top: 42px;
   cursor: pointer;
-  transition: background 0.2s ease-in-out;
+  font-size: 18px;
 }
 
-.btn-register:hover {
-  background: #0056b3;
-}
-
-.messages {
-  margin: 12px 0;
-}
-
-.msg {
-  padding: 10px;
+/* Buttons */
+.btn {
+  width: 100%;
+  padding: 12px;
+  border-radius: 8px;
+  font-weight: 600;
+  border: none;
   margin-bottom: 8px;
-  border-radius: 5px;
-  font-size: 14px;
 }
+.btn-primary { background: #007bff; color: white; }
+.btn-success { background: #28a745; color: white; }
 
-.msg.success { background: #d4edda; color: #155724; }
-.msg.warning { background: #fff3cd; color: #856404; }
-.msg.danger   { background: #f8d7da; color: #721c24; }
-
-.login-link {
+/* Meta */
+.meta {
   text-align: center;
-  margin-top: 16px;
-  font-size: 14px;
-  color: #555;
+  margin-top: 12px;
+  font-size: 0.9rem;
 }
-
-.login-link a {
+.meta a {
   color: #007bff;
   text-decoration: none;
-  font-weight: 500;
 }
-
-.login-link a:hover {
+.meta a:hover {
   text-decoration: underline;
 }
 
-@media (max-width: 450px) {
-  .register-card {
-    padding: 20px;
-    margin: 10px;
-  }
+/* Message line */
+.msg {
+  margin-top: 12px;
+  text-align: center;
+  color: #d9534f;
+  font-size: 0.9rem;
 }
 </style>
+{% endblock %}
+
+{% block js %}
+<script>
+
+// Toggle password visibility
+function togglePassword(id, el) {
+  const input = document.getElementById(id);
+  input.type = input.type === "password" ? "text" : "password";
+}
+
+// Show message
+function showMsg(text, timeout=4000) {
+  const msg = document.getElementById("msg");
+  msg.textContent = text;
+  if (timeout) setTimeout(()=> msg.textContent = "", timeout);
+}
+
+// Build payload for email/mobile
+function identifierPayload(identifier) {
+  let payload = {};
+  if (identifier.includes("@")) payload.email = identifier;
+  else payload.mobile = identifier.replace(/\s+/g, "").replace(/^\+/, "");
+  return payload;
+}
+
+const nameInput = document.getElementById("name");
+const identifierInput = document.getElementById("identifier");
+const passwordInput = document.getElementById("password");
+const otpInput = document.getElementById("otp");
+const otpGroup = document.getElementById("otp-group");
+const sendBtn = document.getElementById("send-otp-btn");
+const registerBtn = document.getElementById("register-btn");
+
+// SEND OTP
+sendBtn.addEventListener("click", async () => {
+  const name = nameInput.value.trim();
+  const identifier = identifierInput.value.trim();
+  const pwd = passwordInput.value.trim();
+
+  if (!name || !identifier || !pwd) {
+    showMsg("Fill all fields first");
+    return;
+  }
+
+  sendBtn.disabled = true;
+  showMsg("Sending OTP...");
+
+  const payload = Object.assign(identifierPayload(identifier), { purpose: "register" });
+
+  try {
+    const res = await fetch("/api/send_otp", {
+      method: "POST",
+      headers: {"Content-Type":"application/json"},
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+
+    showMsg(data.message);
+
+    if (data.success) {
+      otpGroup.style.display = "block";
+      registerBtn.style.display = "block";
+      identifierInput.disabled = true;
+    }
+
+  } catch (e) {
+    showMsg("Server error. Try again.");
+  }
+
+  sendBtn.disabled = false;
+});
+
+// COMPLETE REGISTRATION
+registerBtn.addEventListener("click", async () => {
+  const identifier = identifierInput.value.trim();
+  const name = nameInput.value.trim();
+  const pwd = passwordInput.value.trim();
+  const otp = otpInput.value.trim();
+
+  if (!otp) {
+    showMsg("Enter OTP");
+    return;
+  }
+
+  showMsg("Verifying OTP...");
+
+  const verifyPayload = Object.assign(identifierPayload(identifier), { otp, purpose: "register" });
+
+  const vRes = await fetch("/api/verify_otp", {
+    method: "POST",
+    headers: {"Content-Type":"application/json"},
+    body: JSON.stringify(verifyPayload)
+  });
+  const v = await vRes.json();
+
+  if (!v.success) {
+    showMsg(v.message);
+    return;
+  }
+
+  showMsg("OTP verified. Creating account...");
+
+  // Now register user
+  const regPayload = Object.assign(identifierPayload(identifier), { name, password: pwd });
+
+  const rRes = await fetch("/api/register", {
+    method:"POST",
+    headers: {"Content-Type":"application/json"},
+    body: JSON.stringify(regPayload)
+  });
+  const r = await rRes.json();
+  showMsg(r.message);
+
+  if (r.success) {
+    setTimeout(()=> window.location.href="/dashboard", 700);
+  }
+});
+
+</script>
 {% endblock %}

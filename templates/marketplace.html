@@ -1,47 +1,76 @@
-{% extends 'layout.html' %}
+{% extends "layout.html" %}
+{% block title %}Marketplace - ByteBank{% endblock %}
+
 {% block content %}
+
+<h2 class="page-title">Data Marketplace</h2>
+
 <div class="marketplace-container">
-  <h2>Data Marketplace</h2>
-  <p>Welcome, <strong>{{ user.name }}</strong> | Balance: <strong>₹{{ user.balance }}</strong></p>
-  <a class="sell-link" href="{{ url_for('sell') }}">Sell Data</a>
+
+  <p class="user-info">
+    Welcome, <strong>{{ user.name }}</strong><br>
+    Wallet Balance: <strong>{{ wallet.balance_mb }} MB</strong>
+  </p>
+
+  <a class="sell-link" href="{{ url_for('sell') }}">List Your Data for Sale</a>
+
   <hr>
 
   {% if items %}
     <div class="items-grid">
       {% for item in items %}
         <div class="item-card">
+
           <h3>{{ item.title }}</h3>
           <p>{{ item.description }}</p>
-          <p><strong>Price:</strong> ₹{{ item.price }}</p>
+
+          <p><strong>Price:</strong> {{ item.price }} MB</p>
           <p><strong>Seller:</strong> {{ item.seller.name }}</p>
+
           {% if item.seller.id != user.id %}
-            <a class="buy-btn" href="{{ url_for('buy', item_id=item.id) }}">Buy</a>
+            <a class="buy-btn" href="#">Buy (Coming Soon)</a>
           {% else %}
             <span class="your-listing">Your Listing</span>
           {% endif %}
+
         </div>
       {% endfor %}
     </div>
   {% else %}
     <p>No data items available yet.</p>
   {% endif %}
+
 </div>
 
 <style>
+
+.page-title {
+  font-size: 1.8rem;
+  color: #007bff;
+  margin-bottom: 1rem;
+  font-weight: 600;
+}
+
 .marketplace-container {
-  max-width: 900px;
+  max-width: 950px;
   margin: 20px auto;
   padding: 0 10px;
 }
 
+.user-info {
+  margin-bottom: 15px;
+  color: #444;
+}
+
 .sell-link {
   display: inline-block;
-  margin-bottom: 10px;
-  padding: 8px 16px;
+  margin-bottom: 15px;
+  padding: 10px 18px;
   background-color: #28a745;
   color: white;
   text-decoration: none;
-  border-radius: 5px;
+  border-radius: 8px;
+  font-weight: 500;
 }
 
 .sell-link:hover {
@@ -50,29 +79,31 @@
 
 .items-grid {
   display: grid;
-  grid-template-columns: 1fr;
-  gap: 15px;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 20px;
 }
 
 .item-card {
-  padding: 15px;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  background-color: #f9f9f9;
+  background: #fff;
+  border-radius: 12px;
+  padding: 18px;
+  box-shadow: 0 3px 10px rgba(0,0,0,0.08);
 }
 
 .item-card h3 {
   margin-top: 0;
+  margin-bottom: 10px;
 }
 
 .buy-btn {
   display: inline-block;
   margin-top: 10px;
-  padding: 6px 12px;
+  padding: 8px 16px;
   background-color: #007bff;
   color: white;
   text-decoration: none;
-  border-radius: 4px;
+  border-radius: 6px;
+  font-weight: 500;
 }
 
 .buy-btn:hover {
@@ -80,10 +111,12 @@
 }
 
 .your-listing {
-  display: inline-block;
   margin-top: 10px;
-  font-style: italic;
+  display: inline-block;
   color: #555;
+  font-style: italic;
 }
+
 </style>
+
 {% endblock %}

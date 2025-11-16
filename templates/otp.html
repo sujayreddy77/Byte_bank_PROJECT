@@ -1,0 +1,115 @@
+{% extends "layout.html" %}
+{% block title %}Verify Login OTP - ByteBank{% endblock %}
+
+{% block content %}
+<h2 class="otp-title">Verify OTP</h2>
+
+<div class="otp-card">
+
+  <p class="notice">OTP sent to: <span id="show-identifier"></span></p>
+
+  <div class="form-group">
+    <input type="text" id="otp" placeholder="Enter OTP" required>
+  </div>
+
+  <button id="verify-btn" class="btn">Verify OTP</button>
+
+  <p class="msg" id="msg"></p>
+</div>
+
+<style>
+.otp-title {
+  font-size: 1.8rem;
+  color: #007bff;
+  margin-bottom: 1rem;
+}
+.notice {
+  text-align:center;
+  color:#555;
+  margin-bottom:10px;
+}
+.otp-card {
+  max-width: 420px;
+  background: #fff;
+  padding: 20px;
+  border-radius: 12px;
+  margin: 0 auto;
+  box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+}
+.form-group input {
+  width: 100%;
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  margin-bottom: 12px;
+}
+.btn {
+  width: 100%;
+  padding: 10px;
+  background-color: #007bff;
+  color: white;
+  border-radius: 8px;
+  cursor: pointer;
+  border: none;
+}
+.btn:hover {
+  background-color: #0056b3;
+}
+.msg {
+  margin-top: 10px;
+  text-align: center;
+  color: #444;
+  font-size: 0.95rem;
+}
+</style>
+{% endblock %}
+
+{% block js %}
+<script>
+const msg = document.getElementById('msg');
+const otpField = document.getElementById('otp');
+
+// Load identifier stored during OTP send
+let identifier = localStorage.getItem("otp_identifier");
+document.getElementById("show-identifier").textContent = identifier || "Unknown";
+
+// Build correct JSON payload
+function identifierPayload(id) {
+    let payload = {};
+    if (id.includes("@")) payload.email = id;
+    else payload.mobile = id.replace(/\s+/g, "").replace(/^\+/, "");
+    return payload;
+}
+
+document.getElementById('verify-btn').addEventListener('click', async () => {
+    const otp = otpField.value.trim();
+
+    if (!otp) {
+        msg.textContent = "OTP required";
+        return;
+    }
+
+    let payload = identifierPayload(identifier);
+    payload.otp = otp;
+    payload.purpose = "login";
+
+    const res = await fetch('/api/verify_otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+    });
+
+    const data = await res.json();
+    msg.textContent = data.message;
+
+    if (data.success) {
+        // clear stored identifier
+        localStorage.removeItem("otp_identifier");
+
+        setTimeout(() => { 
+            window.location.href = '/dashboard'; 
+        }, 700);
+    }
+});
+</script>
+{% endblock %}

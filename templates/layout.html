@@ -15,33 +15,55 @@
       <div class="logo-title">
         <svg width="36" height="36" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
           <circle cx="32" cy="32" r="32" fill="#ff0000"/>
-          <text x="32" y="38" text-anchor="middle" fill="#fff" font-size="28" font-family="Arial, sans-serif" font-weight="bold">BB</text>
+          <text x="32" y="38" text-anchor="middle" fill="#fff" font-size="28" 
+                font-family="Arial, sans-serif" font-weight="bold">BB</text>
         </svg>
         <span>ByteBank</span>
       </div>
 
       <nav>
+
         {% if user %}
+          <!-- Logged-in user menu -->
           <a href="{{ url_for('dashboard') }}">Dashboard</a>
           <a href="{{ url_for('transactions') }}">Transactions</a>
           <a href="{{ url_for('transfer') }}">Transfer</a>
           <a href="{{ url_for('marketplace') }}">Marketplace</a>
           <a href="{{ url_for('sell') }}">Sell</a>
           <a href="{{ url_for('profile') }}">Profile</a>
+
           {% if user.is_admin %}
             <a href="{{ url_for('admin_panel') }}">Admin</a>
           {% endif %}
+
           <a href="{{ url_for('logout') }}" class="logout-link">Logout</a>
+
         {% else %}
+          <!-- Not logged in -->
+
           <a href="{{ url_for('index') }}">Home</a>
-          <a class="btn" href="{{ url_for('login') }}">Login</a>
-          <a class="btn" href="{{ url_for('register') }}">Register</a>
+
+          {% if request.endpoint in [
+              "login_page", 
+              "register_page",
+              "forgot_password",
+              "reset_password",
+              "reset_password_otp",
+              "reset_password_new"
+            ] 
+          %}
+            <a class="btn" href="{{ url_for('login_page') }}">Login</a>
+            <a class="btn" href="{{ url_for('register_page') }}">Register</a>
+          {% endif %}
+
         {% endif %}
+
       </nav>
     </aside>
 
-    <!-- ===== Main Area ===== -->
+    <!-- ===== Main Content ===== -->
     <div class="main-content">
+
       <main class="container">
         {% with messages = get_flashed_messages(with_categories=true) %}
           {% if messages %}
@@ -58,14 +80,16 @@
 
       <footer class="footer">
         <div class="container">
-          ByteBank &copy; {{ datetime.utcnow().year }}
+          ByteBank © {{ datetime.utcnow().year }}
         </div>
       </footer>
+
     </div>
 
   </div>
 
   <script src="{{ url_for('static', filename='main.js') }}"></script>
   {% block js %}{% endblock %}
+
 </body>
 </html>

@@ -13,9 +13,9 @@
       <p class="hero-subtext">Logged in as <strong>{{ user.name }}</strong></p>
     {% else %}
       <p class="hero-cta">
-        <a class="btn primary-btn" href="{{ url_for('register') }}">Register</a>
+        <a class="btn primary-btn" href="{{ url_for('register_page') }}">Register</a>
         <span class="separator">or</span>
-        <a class="btn secondary-btn" href="{{ url_for('login') }}">Login</a>
+        <a class="btn secondary-btn" href="{{ url_for('login_page') }}">Login</a>
       </p>
       <p class="hero-subtext">Already have an account? Login to access your dashboard.</p>
     {% endif %}

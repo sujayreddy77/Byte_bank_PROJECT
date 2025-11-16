@@ -68,7 +68,16 @@ body {
 .sidebar nav a:hover {
   background: #1d489e;
 }
-
+.sidebar nav .btn {
+    display: flex;
+    padding: 12px;
+    background:  #0069d9;
+    color: white;
+    text-align: center;
+    border-radius: 10px;
+    margin: 10px 0;
+    width: 170px;
+}
 .logout-link {
   margin-top: auto;
   background: #b30b0b;

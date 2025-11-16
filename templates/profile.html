@@ -59,7 +59,7 @@
         </div>
 
         <div class="detail-box">
-          <div class="detail-icon">📅</div>
+          <div class="detail-icon">🗓</div>
           <div>
             <p class="detail-label">Account Created</p>
             <p class="detail-value">{{ user.created_at.strftime('%Y-%m-%d %H:%M:%S') if user.created_at else 'Unknown' }}</p>
@@ -116,7 +116,7 @@
       {% endif %}
     </div>
   {% else %}
-    <p>Please <a href="{{ url_for('login') }}">login</a> to view your profile.</p>
+    <p>Please <a href="{{ url_for('login_page') }}">login</a> to view your profile.</p>
   {% endif %}
 </div>
 

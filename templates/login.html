@@ -1,165 +1,211 @@
 {% extends "layout.html" %}
-
 {% block title %}Login - ByteBank{% endblock %}
 
 {% block content %}
-<div class="login-container">
-  <div class="login-card">
-    <h2>Login to ByteBank</h2>
+<h2 class="page-title">Login</h2>
 
-    <form method="POST" action="{{ url_for('login') }}">
-      <label for="email">Email</label>
-      <input type="text" id="email" name="email" placeholder="Enter your email" required>
+<div class="card auth-card">
 
-      <label for="password">Password</label>
-      <div class="password-field">
-        <input type="password" id="password" name="password" placeholder="Enter your password" required>
-        <span class="toggle-password" onclick="togglePassword('password', this)">
-          <svg xmlns="http://www.w3.org/2000/svg" class="eye-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-              d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-              d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-          </svg>
-        </span>
-      </div>
+  <!-- Flash Messages -->
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      {% for category, message in messages %}
+        <div class="flash {{ category }}">{{ message }}</div>
+      {% endfor %}
+    {% endif %}
+  {% endwith %}
 
-      <button type="submit" class="btn-login">Login</button>
-    </form>
-
-    <p class="signup-link">
-      Don’t have an account? <a href="{{ url_for('register') }}">Sign up</a>
-    </p>
+  <!-- Email/Mobile -->
+  <div class="form-group">
+    <label>Email or Mobile</label>
+    <input type="text" id="identifier" placeholder="Enter your email or mobile" autocomplete="off">
   </div>
-</div>
 
-<script>
-function togglePassword(id, el) {
-  const input = document.getElementById(id);
-  const svg = el.querySelector("svg");
-  if (input.type === "password") {
-    input.type = "text";
-    svg.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.477 0-8.268-2.943-9.542-7a10.045 10.045 0 012.19-3.478M9.88 9.88a3 3 0 104.24 4.24M6.1 6.1l11.8 11.8"/>';
-  } else {
-    input.type = "password";
-    svg.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>';
-  }
-}
-</script>
+  <!-- Password -->
+  <div class="form-group password-wrapper">
+    <label>Password</label>
+    <input type="password" id="password" placeholder="Enter your password" autocomplete="new-password">
+    <span class="toggle-password" onclick="togglePassword('password', this)">👁</span>
+  </div>
+
+  <!-- Login Button -->
+  <button id="login-btn" class="btn btn-primary">Login</button>
+
+  <!-- Links -->
+  <div class="meta meta-row">
+      <a class="meta-link meta-register" href="{{ url_for('register_page') }}">
+        Create Account
+      </a>
+
+      <a class="meta-link meta-forgot" href="{{ url_for('forgot') }}">
+        Forgot Password?
+      </a>
+  </div>
+
+  <div id="msg" class="msg"></div>
+</div>
 {% endblock %}
+
 
 {% block css %}
 <style>
-  body {
-    /* background-image: url('{{ url_for("static", filename="image/buildingimg.jpg") }}'); */
-    background-size: cover;
-    background-position: center;
-    background-repeat: no-repeat;
-    background-attachment: fixed;
-    font-family: 'Poppins', sans-serif;
-  }
+.page-title {
+  text-align: center;
+  margin-bottom: 20px;
+  color: #007bff;
+  font-weight: 700;
+}
 
-  .login-container {
-    display: flex;
-    justify-content: center; 
-    align-items: center;
-    min-height: 70vh;
-  }
+.auth-card {
+  width: 80%;
+  margin: auto;
+  padding: 25px;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.08);
+}
 
-  .login-card {
-    background-color: rgba(255, 255, 255, 0.9);
-    padding: 2rem 2.5rem;
-    border-radius: 15px;
-    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.2);
-    width: 800px;
-  }
+/* Flash messages */
+.flash {
+  padding: 10px;
+  border-radius: 8px;
+  margin-bottom: 15px;
+  text-align: center;
+}
+.flash.success { background: #d4edda; color: #155724; }
+.flash.error { background: #f8d7da; color: #721c24; }
 
-  .login-card h2 {
-    text-align: center;
-    margin-bottom: 1.5rem;
-    color: #222;
-  }
+/* Form inputs */
+.form-group { margin-bottom: 15px; }
+.form-group label { font-weight: 600; font-size: 0.95rem; }
+.form-group input {
+  width: 100%;
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  margin-top: 6px;
+}
 
-  form {
-    display: flex;
-    flex-direction: column;
-  }
+/* Password visibility */
+.password-wrapper {
+  position: relative;
+}
+.toggle-password {
+  position: absolute;
+  right: 12px;
+  top: 42px;
+  cursor: pointer;
+  font-size: 18px;
+  opacity: 0.6;
+}
+.toggle-password:hover { opacity: 1; }
 
-  label {
-    font-weight: 600;
-    margin-bottom: 0.3rem;
-    color: #222;
-  }
+/* Buttons */
+.btn {
+  width: 100%;
+  padding: 12px;
+  border-radius: 8px;
+  font-weight: 600;
+  margin-top: 12px;
+  border: none;
+}
+.btn-primary {
+  background: #007bff;
+  color: white;
+}
 
-  input[type="text"],
-  input[type="password"] {
-    padding: 0.6rem;
-    border-radius: 8px;
-    border: 1px solid #ccc;
-    margin-bottom: 1rem;
-    font-size: 1rem;
-    width: 100%;
-  }
+/* Links layout */
+.meta-row {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 14px;
+  flex-wrap: wrap;
+}
 
-  input:focus {
-    outline: none;
-    border-color: #007bff;
-  }
+.meta-link {
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-weight: 600;
+  text-decoration: none;
+  font-size: 0.95rem;
+}
 
-  .password-field {
-    position: relative;
-    display: flex;
-    align-items: center;
-  }
+.meta-register {
+  color: #007bff;
+  border: 1px solid rgba(0,123,255,0.15);
+}
 
-  .toggle-password {
-    position: absolute;
-    right: 12px;
-    top: 50%;
-    transform: translateY(-50%);
-    cursor: pointer;
-    color: #666;
-    transition: color 0.2s ease;
-  }
+.meta-forgot {
+  color: #6c757d;
+  border: 1px solid rgba(108,117,125,0.15);
+}
 
-  .toggle-password:hover {
-    color: #007bff;
-  }
+.meta-link:hover {
+  filter: brightness(0.95);
+  transform: translateY(-1px);
+}
 
-  .eye-icon {
-    width: 22px;
-    height: 22px;
-    stroke-width: 2;
-  }
+/* Error message */
+.msg {
+  margin-top: 10px;
+  color: #d9534f;
+  text-align: center;
+}
 
-  .btn-login {
-    background-color: #007bff;
-    color: #fff;
-    padding: 0.7rem;
-    border: none;
-    border-radius: 8px;
-    font-size: 1rem;
-    cursor: pointer;
-    transition: background-color 0.2s;
-  }
-
-  .btn-login:hover { 
-    background-color: #0056b3;
-  }
-
-  .signup-link {
-    text-align: center;
-    margin-top: 1rem;
-    font-size: 0.95rem;
-  }
-
-  .signup-link a {
-    color: #007bff;
-    text-decoration: none;
-  }
-
-  .signup-link a:hover {
-    text-decoration: underline;
-  }
+/* Responsive */
+@media (max-width: 520px) {
+  .meta-row { flex-direction: column; }
+  .meta-link { width: 100%; text-align: center; }
+}
 </style>
+{% endblock %}
+
+
+{% block js %}
+<script>
+
+// Build email/mobile object
+function getIdentifierPayload(identifier) {
+    let payload = {};
+    if (identifier.includes("@")) payload.email = identifier;
+    else payload.mobile = identifier.replace(/\s+/g, "").replace(/^\+/, "");
+    return payload;
+}
+
+// Toggle password visibility
+function togglePassword(id, el) {
+  const input = document.getElementById(id);
+  input.type = input.type === "password" ? "text" : "password";
+}
+
+const msg = document.getElementById("msg");
+
+// LOGIN
+document.getElementById("login-btn").addEventListener("click", async () => {
+    const identifier = document.getElementById("identifier").value.trim();
+    const password = document.getElementById("password").value.trim();
+
+    if (!identifier || !password) {
+        msg.textContent = "Both fields required.";
+        return;
+    }
+
+    const payload = getIdentifierPayload(identifier);
+    payload.password = password;
+
+    const res = await fetch("/api/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+    });
+
+    const data = await res.json();
+    msg.textContent = data.message || "";
+
+    if (data.success) {
+        setTimeout(() => window.location.href = "/dashboard", 600);
+    }
+});
+</script>
 {% endblock %}
